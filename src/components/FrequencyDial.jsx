@@ -8,8 +8,7 @@ export default function FrequencyDial({ stations, currentStation, onSelect }) {
   const [angle, setAngle] = useState(0)
   const dragStart = useRef(null)
   const debounceTimer = useRef(null)
-  const lastSelectedStation = useRef(null)
-  const selectionLock = useRef(false)
+  const lastSelectedIndex = useRef(-1)
 
   const cx = 120
   const cy = 120
@@ -18,18 +17,23 @@ export default function FrequencyDial({ stations, currentStation, onSelect }) {
   const freqMin = 87.5
   const freqMax = 108.0
 
+  // Calculate angles for each station
   const stationAngles = stations.slice(0, STATIONS_COUNT).map((_, i) => {
-    return -150 + (i / Math.max(stations.length - 1, 1)) * 300
+    const maxIndex = Math.max(stations.length - 1, 1)
+    return -150 + (i / maxIndex) * 300
   })
 
+  // Find current station index
   const currentIndex = currentStation
     ? stations.findIndex(s => s.stationuuid === currentStation.stationuuid)
     : -1
 
-  const needleAngle = currentIndex >= 0
-    ? stationAngles[currentIndex] ?? angle
+  // Get needle angle - either from current station or from manual drag
+  const needleAngle = currentIndex >= 0 && currentIndex < STATIONS_COUNT
+    ? stationAngles[currentIndex]
     : angle
 
+  // Calculate frequency display
   const freq = freqMin + ((needleAngle + 150) / 300) * (freqMax - freqMin)
 
   function getAngleFromEvent(e) {
@@ -54,31 +58,39 @@ export default function FrequencyDial({ stations, currentStation, onSelect }) {
 
   const handleMouseMove = useCallback((e) => {
     if (!dragging || !dragStart.current) return
+
     const a = getAngleFromEvent(e)
     let delta = a - dragStart.current.startAngle
+
+    // Normalize delta to -180 to 180
     if (delta > 180) delta -= 360
     if (delta < -180) delta += 360
+
+    // Calculate new angle with bounds
     const newAngle = Math.max(-150, Math.min(150, dragStart.current.dialAngle + delta))
     setAngle(newAngle)
 
+    // Map angle to station index
     const ratio = (newAngle + 150) / 300
-    const idx = Math.round(ratio * (stations.length - 1))
-    const station = stations[idx]
+    const stationCount = Math.min(stations.length, STATIONS_COUNT)
+    const exactIndex = ratio * (stationCount - 1)
+    const closestIndex = Math.round(exactIndex)
 
-    // Only trigger selection if station changed and not locked
-    if (station && station.stationuuid !== lastSelectedStation.current?.stationuuid && !selectionLock.current) {
-      lastSelectedStation.current = station
-      selectionLock.current = true
+    // Only trigger selection if station index changed
+    if (closestIndex !== lastSelectedIndex.current && closestIndex >= 0 && closestIndex < stationCount) {
+      lastSelectedIndex.current = closestIndex
+      const station = stations[closestIndex]
 
       // Clear existing debounce timer
       if (debounceTimer.current) {
         clearTimeout(debounceTimer.current)
       }
 
-      // Debounce the station selection by 300ms
+      // Debounce the station selection
       debounceTimer.current = setTimeout(() => {
-        onSelect(station)
-        selectionLock.current = false
+        if (station) {
+          onSelect(station)
+        }
       }, 300)
     }
   }, [dragging, stations, onSelect])

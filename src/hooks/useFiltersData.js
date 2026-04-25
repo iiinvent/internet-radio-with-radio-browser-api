@@ -18,9 +18,28 @@ export function useFiltersData(filters) {
     async function loadMeta() {
       try {
         const [c, l] = await Promise.all([getCountries(), getLanguages()])
-        setCountries(c.filter(x => x.name && x.stationcount > 0))
+
+        // Log raw country fields to inspect structure
+        if (c && c[0]) console.log('[Country fields]', Object.keys(c[0]), c[0])
+
+        // Normalize countries — API returns `iso_3166_1` not `iso_3166_1_alpha_2`
+        const normalized = c
+          .filter(x => x.name && x.stationcount > 0)
+          .map(x => ({
+            name: x.name,
+            // Try all possible field names the API might use
+            iso_3166_1_alpha_2: x.iso_3166_1 || x.iso_3166_1_alpha_2 || x.countrycode || x.code || '',
+          }))
+          .filter(x => x.iso_3166_1_alpha_2)
+          .sort((a, b) =>
+            a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+          )
+
+        setCountries(normalized)
         setLanguages(l.filter(x => x.name && x.stationcount > 0))
-      } catch (_) {}
+      } catch (err) {
+        console.error('[loadMeta error]', err)
+      }
     }
     loadMeta()
   }, [])
@@ -28,7 +47,6 @@ export function useFiltersData(filters) {
   // Reload tags whenever country or language changes
   useEffect(() => {
     async function loadTags() {
-      // No filters active — show default common genres immediately
       if (!filters.country && !filters.language) {
         setAvailableTags(COMMON_GENRES)
         return

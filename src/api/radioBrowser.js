@@ -7,7 +7,10 @@ const headers = {
 
 export async function getCountries() {
   const res = await fetch(`${BASE_URL}/countries?order=name&hidebroken=true`, { headers })
-  return res.json()
+  const data = await res.json()
+  // Log first entry to inspect actual field names
+  if (data && data[0]) console.log('[Countries sample]', data[0])
+  return data
 }
 
 export async function getLanguages() {
@@ -35,8 +38,11 @@ export async function searchStations(params = {}) {
     limit: '60',
     ...params,
   })
+  console.log('[searchStations] params:', Object.fromEntries(query))
   const res = await fetch(`${BASE_URL}/stations/search?${query}`, { headers })
-  return res.json()
+  const data = await res.json()
+  console.log('[searchStations] result count:', Array.isArray(data) ? data.length : data)
+  return data
 }
 
 export async function getTopStations(limit = 60) {

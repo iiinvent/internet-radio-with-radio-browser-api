@@ -16,18 +16,19 @@ function StationCard({ station, isActive, onPlay }) {
       onClick={() => onPlay(station)}
     >
       <div style={styles.cardLeft}>
-        {favicon ? (
-          <img
-            src={favicon}
-            alt=""
-            style={styles.favicon}
-            onError={e => { e.target.style.display = 'none' }}
-          />
-        ) : (
+        <div style={styles.faviconWrapper}>
           <div style={styles.faviconPlaceholder}>
             <Radio size={14} color="#475569" />
           </div>
-        )}
+          {favicon && (
+            <img
+              src={favicon}
+              alt=""
+              style={styles.favicon}
+              onError={e => { e.target.style.display = 'none' }}
+            />
+          )}
+        </div>
       </div>
 
       <div style={styles.cardBody}>
@@ -138,21 +139,31 @@ const styles = {
   cardLeft: {
     flexShrink: 0,
   },
-  favicon: {
+  faviconWrapper: {
+    position: 'relative',
     width: 28,
     height: 28,
     borderRadius: 4,
-    objectFit: 'cover',
-    background: '#1e293b',
+    flexShrink: 0,
   },
   faviconPlaceholder: {
-    width: 28,
-    height: 28,
+    position: 'absolute',
+    inset: 0,
     borderRadius: 4,
     background: '#1e293b',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 1,
+  },
+  favicon: {
+    position: 'absolute',
+    inset: 0,
+    width: '100%',
+    height: '100%',
+    borderRadius: 4,
+    objectFit: 'cover',
+    zIndex: 2,
   },
   cardBody: {
     flex: 1,

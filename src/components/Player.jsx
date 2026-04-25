@@ -8,15 +8,16 @@ export default function Player({ currentStation, isPlaying, volume, onToggle, on
       {/* Station info */}
       <div style={styles.stationInfo}>
         <div style={styles.stationIconWrap}>
-          {currentStation?.favicon ? (
+          <div style={styles.stationIconPlaceholder}>
+            <Radio size={18} color="#334155" />
+          </div>
+          {currentStation?.favicon && (
             <img
               src={currentStation.favicon}
               alt=""
               style={styles.stationIcon}
               onError={e => { e.target.style.display = 'none' }}
             />
-          ) : (
-            <Radio size={18} color={isPlaying ? '#ef4444' : '#334155'} />
           )}
         </div>
         <div style={styles.stationText}>
@@ -82,20 +83,31 @@ const styles = {
     minWidth: 0,
   },
   stationIconWrap: {
+    position: 'relative',
     width: 36,
     height: 36,
+    borderRadius: 6,
+    flexShrink: 0,
+    overflow: 'hidden',
+  },
+  stationIconPlaceholder: {
+    position: 'absolute',
+    inset: 0,
     borderRadius: 6,
     background: '#1e293b',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    flexShrink: 0,
-    overflow: 'hidden',
+    zIndex: 1,
   },
   stationIcon: {
+    position: 'absolute',
+    inset: 0,
     width: 36,
     height: 36,
     objectFit: 'cover',
+    borderRadius: 6,
+    zIndex: 2,
   },
   stationText: {
     minWidth: 0,
