@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { searchStations, clickStation } from '../api/radioBrowser'
+import { fuzzyMatch, fuzzyScore } from '../utils/fuzzyMatch'
 
 const INITIAL_FILTERS = {
   country: '',
@@ -7,6 +8,7 @@ const INITIAL_FILTERS = {
   tag: '',
   bitrate: '',
   codec: '',
+  search: '',
 }
 
 export function useRadio() {
@@ -21,27 +23,20 @@ export function useRadio() {
   const audioRef = useRef(null)
   const playLockRef = useRef(false)
 
-  // Fetch stations when filters change
   useEffect(() => {
     async function fetchStations() {
       setLoading(true)
       setError(null)
       try {
         const params = {}
-        // countrycode expects ISO 3166-1 alpha-2 (e.g. "US", "GB")
         if (filters.country) params.countrycode = filters.country
-        // language expects the language name in lowercase (e.g. "english")
         if (filters.language) params.language = filters.language.toLowerCase()
-        // tag
         if (filters.tag) params.tag = filters.tag
-        // bitrateMin
         if (filters.bitrate) params.bitratemin = filters.bitrate
-        // codec expects uppercase (e.g. "MP3", "AAC")
         if (filters.codec) params.codec = filters.codec
 
         const data = await searchStations(params)
 
-        // Sort by votes (popularity) in descending order
         const sorted = (Array.isArray(data) ? data : []).sort((a, b) => {
           const votesA = parseInt(a.votes) || 0
           const votesB = parseInt(b.votes) || 0
@@ -58,7 +53,31 @@ export function useRadio() {
     }
 
     fetchStations()
-  }, [filters])
+  }, [filters.country, filters.language, filters.tag, filters.bitrate, filters.codec])
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume
+    }
+  }, [volume])
+
+  const filteredStations = useMemo(() => {
+    const query = (filters.search || '').trim()
+    if (!query) return stations
+
+    const matched = stations.filter(station =>
+      [station.name, station.country, station.language, station.tags]
+        .some(f => fuzzyMatch(f, query))
+    )
+
+    matched.sort((a, b) => {
+      const scoreDiff = fuzzyScore(b, query) - fuzzyScore(a, query)
+      if (scoreDiff !== 0) return scoreDiff
+      return (parseInt(b.votes) || 0) - (parseInt(a.votes) || 0)
+    })
+
+    return matched
+  }, [stations, filters.search])
 
   function playStation(station) {
     if (playLockRef.current) return
@@ -114,10 +133,7 @@ export function useRadio() {
   }
 
   function updateFilter(key, value) {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value,
-    }))
+    setFilters(prev => ({ ...prev, [key]: value }))
   }
 
   function clearFilters() {
@@ -125,14 +141,8 @@ export function useRadio() {
     stopStation()
   }
 
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume
-    }
-  }, [volume])
-
   return {
-    stations,
+    stations: filteredStations,
     loading,
     error,
     currentStation,

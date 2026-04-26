@@ -29,12 +29,79 @@
   50% { transform: scale(1.2); opacity: 0.2; }
 }
 
+@keyframes vuPulse {
+  0% { transform: scaleY(0.4); }
+  100% { transform: scaleY(1); }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes burstParticle {
+  0% { transform: translate(-50%, -50%) rotate(var(--deg)) translateY(0px); opacity: 1; }
+  100% { transform: translate(-50%, -50%) rotate(var(--deg)) translateY(-14px); opacity: 0; }
+}
+
 /* Hover states */
 .station-card:hover {
-  background: #111827 !important;
-  border-color: #334155 !important;
+  background: #0a0f1a !important;
+  border-left: 2px solid #1e293b !important;
 }
 
 button:hover {
   opacity: 0.85;
+}
+
+/* Scrollbar hide for tag strip */
+.tag-strip::-webkit-scrollbar {
+  display: none;
+}
+
+/* Favourites panel scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: #020617;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Input focus */
+input:focus {
+  border-color: #334155 !important;
+  outline: none;
+}
+
+select:focus {
+  border-color: #334155 !important;
+  outline: none;
+}
+
+/* Mobile touch improvements */
+@media (max-width: 639px) {
+  .station-card {
+    min-height: 52px;
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .station-card {
+    min-height: 56px;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .station-card {
+    min-height: 58px;
+  }
 }

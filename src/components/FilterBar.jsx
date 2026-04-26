@@ -1,130 +1,103 @@
 import React from 'react'
+import { useBreakpoint } from '../hooks/useBreakpoint'
 
-export default function FilterBar({
-  filters,
-  countries,
-  languages,
-  onUpdate,
-  onClear,
-}) {
+export default function FilterBar({ filters, countries, languages, onUpdate, onClear }) {
+  const bp = useBreakpoint()
+  const isMobile = bp === 'mobile'
+
+  const hasFilters = filters.country || filters.language || filters.tag || filters.search
+
   return (
-    <div style={styles.container}>
-      <div style={styles.row}>
-        <div style={styles.group}>
-          <label style={styles.label}>COUNTRY</label>
-          <select
-            value={filters.country}
-            onChange={e => onUpdate('country', e.target.value)}
-            style={styles.select}
-          >
-            <option value="">All</option>
-            {countries.map(c => (
-              <option key={c.iso_3166_1_alpha_2} value={c.iso_3166_1_alpha_2}>
-                {c.name.toUpperCase()}
-              </option>
-            ))}
-          </select>
-        </div>
+    <div style={{ ...styles.bar, flexWrap: isMobile ? 'wrap' : 'nowrap', gap: isMobile ? 6 : 8 }}>
+      <input
+        type="text"
+        placeholder="SEARCH STATIONS..."
+        value={filters.search || ''}
+        onChange={e => onUpdate('search', e.target.value)}
+        style={{ ...styles.input, flex: isMobile ? '1 1 100%' : '1 1 180px', minWidth: 0 }}
+      />
 
-        <div style={styles.group}>
-          <label style={styles.label}>LANGUAGE</label>
-          <select
-            value={filters.language}
-            onChange={e => onUpdate('language', e.target.value)}
-            style={styles.select}
-          >
-            <option value="">All</option>
-            {languages.map(l => (
-              <option key={l.iso_639} value={l.name}>
-                {l.name.toUpperCase()}
-              </option>
-            ))}
-          </select>
-        </div>
+      <select
+        value={filters.country || ''}
+        onChange={e => onUpdate('country', e.target.value)}
+        style={{ ...styles.select, flex: isMobile ? '1 1 calc(50% - 3px)' : '0 0 140px' }}
+      >
+        <option value="">ALL COUNTRIES</option>
+        {countries.map(c => (
+          <option key={c.iso_3166_1_alpha_2} value={c.iso_3166_1_alpha_2}>
+            {c.name.toUpperCase()}
+          </option>
+        ))}
+      </select>
 
-        <div style={styles.group}>
-          <label style={styles.label}>BITRATE</label>
-          <select
-            value={filters.bitrate}
-            onChange={e => onUpdate('bitrate', e.target.value)}
-            style={styles.select}
-          >
-            <option value="">Any</option>
-            <option value="128">128 kbps+</option>
-            <option value="192">192 kbps+</option>
-            <option value="256">256 kbps+</option>
-            <option value="320">320 kbps+</option>
-          </select>
-        </div>
+      <select
+        value={filters.language || ''}
+        onChange={e => onUpdate('language', e.target.value)}
+        style={{ ...styles.select, flex: isMobile ? '1 1 calc(50% - 3px)' : '0 0 130px' }}
+      >
+        <option value="">ALL LANGUAGES</option>
+        {languages
+          .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+          .map(l => (
+            <option key={l.name} value={l.name}>
+              {l.name.toUpperCase()}
+            </option>
+          ))}
+      </select>
 
-        <div style={styles.group}>
-          <label style={styles.label}>CODEC</label>
-          <select
-            value={filters.codec}
-            onChange={e => onUpdate('codec', e.target.value)}
-            style={styles.select}
-          >
-            <option value="">Any</option>
-            <option value="MP3">MP3</option>
-            <option value="AAC">AAC</option>
-            <option value="OGG">OGG</option>
-            <option value="FLAC">FLAC</option>
-          </select>
-        </div>
-
-        <button style={styles.clearBtn} onClick={onClear}>
-          CLEAR
-        </button>
-      </div>
+      {hasFilters && (
+        <button onClick={onClear} style={styles.clearBtn}>✕ CLEAR</button>
+      )}
     </div>
   )
 }
 
 const styles = {
-  container: {
-    background: '#0f172a',
+  bar: {
+    display: 'flex',
+    alignItems: 'center',
+    padding: '8px 12px',
+    background: '#0a0f1a',
     borderBottom: '1px solid #1e293b',
-    padding: '12px 16px',
+    flexShrink: 0,
   },
-  row: {
-    display: 'flex',
-    gap: 12,
-    alignItems: 'flex-end',
-    flexWrap: 'wrap',
-  },
-  group: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 4,
-  },
-  label: {
-    fontFamily: 'Share Tech Mono',
-    fontSize: '9px',
-    color: '#64748b',
-    letterSpacing: '0.1em',
-    textTransform: 'uppercase',
-  },
-  select: {
-    background: '#1e293b',
-    border: '1px solid #334155',
-    color: '#e2e8f0',
-    fontFamily: 'Share Tech Mono',
-    fontSize: '12px',
-    padding: '6px 8px',
-    borderRadius: '2px',
-    cursor: 'pointer',
-    minWidth: '120px',
-  },
-  clearBtn: {
-    background: '#ef4444',
-    border: 'none',
-    color: '#fff',
+  input: {
+    background: '#020617',
+    border: '1px solid #1e293b',
+    borderRadius: 4,
+    color: '#94a3b8',
     fontFamily: 'Share Tech Mono',
     fontSize: '10px',
     letterSpacing: '0.1em',
-    padding: '6px 12px',
-    borderRadius: '2px',
+    padding: '7px 10px',
+    outline: 'none',
+    transition: 'border-color 0.15s',
+  },
+  select: {
+    background: '#020617',
+    border: '1px solid #1e293b',
+    borderRadius: 4,
+    color: '#94a3b8',
+    fontFamily: 'Share Tech Mono',
+    fontSize: '10px',
+    letterSpacing: '0.08em',
+    padding: '7px 8px',
+    outline: 'none',
     cursor: 'pointer',
-    transition: 'background 0.15s',
+    minWidth: 0,
+  },
+  clearBtn: {
+    background: 'transparent',
+    border: '1px solid #334155',
+    borderRadius: 4,
+    color: '#475569',
+    fontFamily: 'Share Tech Mono',
+    fontSize: '9px',
+    letterSpacing: '0.1em',
+    padding: '7px 10px',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+    flexShrink: 0,
+    transition: 'color 0.15s, border-color 0.15s',
   },
 }

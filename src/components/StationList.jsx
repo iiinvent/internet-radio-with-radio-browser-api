@@ -1,112 +1,120 @@
 import React from 'react'
-import { Radio, Wifi, Music } from 'lucide-react'
+import FavouriteButton from './FavouriteButton'
+import { useBreakpoint } from '../hooks/useBreakpoint'
 
-function StationCard({ station, isActive, onPlay }) {
-  const favicon = station.favicon
-  const votes = station.votes > 999
-    ? `${(station.votes / 1000).toFixed(1)}k`
-    : station.votes
+export default function StationList({ stations, currentStation, onPlay, onToggleFav, isFavourite, loading, error }) {
+  const bp = useBreakpoint()
+  const isMobile = bp === 'mobile'
 
-  return (
-    <button
-      style={{
-        ...styles.card,
-        ...(isActive ? styles.cardActive : {}),
-      }}
-      onClick={() => onPlay(station)}
-    >
-      <div style={styles.cardLeft}>
-        <div style={styles.faviconWrapper}>
-          <div style={styles.faviconPlaceholder}>
-            <Radio size={14} color="#475569" />
-          </div>
-          {favicon && (
-            <img
-              src={favicon}
-              alt=""
-              style={styles.favicon}
-              onError={e => { e.target.style.display = 'none' }}
-            />
-          )}
-        </div>
+  if (loading) return (
+    <div style={styles.center}>
+      <div style={styles.scanLine} />
+      <span style={styles.loadingText}>SCANNING FREQUENCIES...</span>
+      <div style={styles.dots}>
+        {[0, 1, 2].map(i => (
+          <span key={i} style={{ ...styles.dot, animationDelay: `${i * 0.3}s` }}>●</span>
+        ))}
       </div>
-
-      <div style={styles.cardBody}>
-        <div style={styles.stationName}>{station.name}</div>
-        <div style={styles.stationMeta}>
-          {station.country && <span style={styles.metaChip}>{station.country}</span>}
-          {station.codec && <span style={styles.metaChip}>{station.codec}</span>}
-          {station.bitrate > 0 && <span style={styles.metaChip}>{station.bitrate}k</span>}
-          {station.language && <span style={styles.metaChip}>{station.language}</span>}
-        </div>
-        {station.tags && (
-          <div style={styles.tags}>
-            {station.tags.split(',').slice(0, 3).map(t => t.trim()).filter(Boolean).map(t => (
-              <span key={t} style={styles.tagPill}>{t}</span>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div style={styles.cardRight}>
-        {isActive && (
-          <div style={styles.liveIndicator}>
-            <span style={styles.liveDot} />
-            <span style={styles.liveText}>LIVE</span>
-          </div>
-        )}
-        <div style={styles.votes}>
-          <Wifi size={10} color="#334155" />
-          <span>{votes}</span>
-        </div>
-      </div>
-    </button>
+    </div>
   )
-}
 
-export default function StationList({ stations, currentStation, onPlay, loading, error }) {
-  if (loading) {
-    return (
-      <div style={styles.centerState}>
-        <div style={styles.scanLine} />
-        <span style={styles.loadingText}>SCANNING FREQUENCIES...</span>
-        <div style={styles.loadingDots}>
-          {[0, 1, 2, 3, 4].map(i => (
-            <div key={i} style={{ ...styles.dot, animationDelay: `${i * 0.15}s` }} />
-          ))}
-        </div>
-      </div>
-    )
-  }
+  if (error) return (
+    <div style={styles.center}>
+      <span style={styles.errorText}>⚠ SIGNAL LOST</span>
+      <span style={styles.errorSub}>{error}</span>
+    </div>
+  )
 
-  if (error) {
-    return (
-      <div style={styles.centerState}>
-        <Music size={32} color="#334155" />
-        <span style={styles.errorText}>Signal lost. Check connection.</span>
-      </div>
-    )
-  }
-
-  if (!stations.length) {
-    return (
-      <div style={styles.centerState}>
-        <Radio size={32} color="#334155" />
-        <span style={styles.emptyText}>No stations found</span>
-      </div>
-    )
-  }
+  if (!stations.length) return (
+    <div style={styles.center}>
+      <span style={styles.errorText}>NO STATIONS FOUND</span>
+      <span style={styles.errorSub}>Try adjusting your filters</span>
+    </div>
+  )
 
   return (
     <div style={styles.list}>
-      {stations.map(station => (
-        <StationCard
-          key={station.stationuuid}
-          station={station}
-          isActive={currentStation?.stationuuid === station.stationuuid}
-          onPlay={onPlay}
-        />
-      ))}
+      {stations.map((station, idx) => {
+        const isActive = currentStation?.stationuuid === station.stationuuid
+        const isFav = isFavourite(station.stationuuid)
+        return (
+          <div
+            key={station.stationuuid}
+            className="station-card"
+            onClick={() => onPlay(station)}
+            style={{
+              ...styles.card,
+              ...(isActive ? styles.cardActive : {}),
+              padding: isMobile ? '10px 12px' : '12px 16px',
+            }}
+          >
+            {/* Index */}
+            <span style={{ ...styles.index, minWidth: isMobile ? 24 : 28 }}>
+              {String(idx + 1).padStart(2, '0')}
+            </span>
+
+            {/* Icon */}
+            <div style={{ ...styles.iconWrap, width: isMobile ? 32 : 38, height: isMobile ? 32 : 38 }}>
+              <div style={styles.iconPlaceholder}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="#334155" strokeWidth="1.5" />
+                  <circle cx="12" cy="12" r="4" stroke="#334155" strokeWidth="1.5" />
+                  <line x1="12" y1="2" x2="12" y2="6" stroke="#334155" strokeWidth="1.5" />
+                </svg>
+              </div>
+              {station.favicon && (
+                <img
+                  src={station.favicon}
+                  alt=""
+                  style={styles.icon}
+                  onError={e => { e.target.style.display = 'none' }}
+                />
+              )}
+            </div>
+
+            {/* Info */}
+            <div style={styles.info}>
+              <span style={{
+                ...styles.name,
+                fontSize: isMobile ? '11px' : '12px',
+                color: isActive ? '#f8fafc' : '#cbd5e1',
+              }}>
+                {station.name}
+              </span>
+              <div style={styles.meta}>
+                {station.country && (
+                  <span style={styles.metaTag}>{station.country.toUpperCase()}</span>
+                )}
+                {station.codec && (
+                  <span style={styles.metaTag}>{station.codec}</span>
+                )}
+                {station.bitrate > 0 && (
+                  <span style={styles.metaTag}>{station.bitrate}k</span>
+                )}
+              </div>
+            </div>
+
+            {/* Right side */}
+            <div style={styles.right}>
+              {isActive && (
+                <div style={styles.waveWrap}>
+                  {[0, 1, 2, 3].map(i => (
+                    <div key={i} style={{ ...styles.wave, animationDelay: `${i * 0.12}s` }} />
+                  ))}
+                </div>
+              )}
+              {station.votes > 0 && !isMobile && (
+                <span style={styles.votes}>▲ {station.votes > 999 ? `${(station.votes / 1000).toFixed(1)}k` : station.votes}</span>
+              )}
+              <FavouriteButton
+                isFav={isFav}
+                onToggle={() => onToggleFav(station)}
+                size={isMobile ? 'sm' : 'md'}
+              />
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -115,144 +123,123 @@ const styles = {
   list: {
     display: 'flex',
     flexDirection: 'column',
-    gap: 1,
-    padding: '8px',
   },
   card: {
     display: 'flex',
     alignItems: 'center',
-    gap: 12,
-    background: '#0f172a',
-    border: '1px solid transparent',
-    borderRadius: 6,
-    padding: '10px 12px',
-    textAlign: 'left',
+    gap: 10,
+    borderBottom: '1px solid #0f172a',
     cursor: 'pointer',
-    transition: 'all 0.15s',
-    width: '100%',
+    transition: 'background 0.15s',
+    background: 'transparent',
   },
   cardActive: {
-    background: '#1a0a0a',
-    border: '1px solid #7f1d1d',
-    boxShadow: '0 0 12px rgba(239,68,68,0.1)',
+    background: '#0a0f1a',
+    borderLeft: '2px solid #ef4444',
   },
-  cardLeft: {
+  index: {
+    fontFamily: 'Share Tech Mono',
+    fontSize: '9px',
+    color: '#1e293b',
+    letterSpacing: '0.05em',
     flexShrink: 0,
+    textAlign: 'right',
   },
-  faviconWrapper: {
+  iconWrap: {
     position: 'relative',
-    width: 28,
-    height: 28,
     borderRadius: 4,
+    overflow: 'hidden',
     flexShrink: 0,
-  },
-  faviconPlaceholder: {
-    position: 'absolute',
-    inset: 0,
-    borderRadius: 4,
-    background: '#1e293b',
+    background: '#0f172a',
+    border: '1px solid #1e293b',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 1,
   },
-  favicon: {
+  iconPlaceholder: {
     position: 'absolute',
     inset: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 0,
+  },
+  icon: {
     width: '100%',
     height: '100%',
-    borderRadius: 4,
     objectFit: 'cover',
-    zIndex: 2,
+    position: 'relative',
+    zIndex: 1,
   },
-  cardBody: {
+  info: {
     flex: 1,
-    minWidth: 0,
     display: 'flex',
     flexDirection: 'column',
     gap: 3,
+    minWidth: 0,
   },
-  stationName: {
-    color: '#e2e8f0',
-    fontSize: '13px',
-    fontWeight: 500,
+  name: {
+    fontFamily: 'Share Tech Mono',
+    fontWeight: 400,
+    letterSpacing: '0.04em',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
   },
-  stationMeta: {
+  meta: {
     display: 'flex',
     gap: 4,
     flexWrap: 'wrap',
   },
-  metaChip: {
-    background: '#1e293b',
-    color: '#475569',
-    fontSize: '9px',
+  metaTag: {
     fontFamily: 'Share Tech Mono',
-    padding: '1px 5px',
-    borderRadius: 2,
-    letterSpacing: '0.05em',
-    textTransform: 'uppercase',
-  },
-  tags: {
-    display: 'flex',
-    gap: 3,
-    flexWrap: 'wrap',
-  },
-  tagPill: {
+    fontSize: '8px',
     color: '#334155',
-    fontSize: '9px',
-    fontFamily: 'Share Tech Mono',
-    letterSpacing: '0.04em',
+    letterSpacing: '0.08em',
+    background: '#0f172a',
+    border: '1px solid #1e293b',
+    borderRadius: 2,
+    padding: '1px 4px',
   },
-  cardRight: {
-    flexShrink: 0,
+  right: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-end',
     gap: 4,
+    flexShrink: 0,
   },
-  liveIndicator: {
+  waveWrap: {
     display: 'flex',
     alignItems: 'center',
-    gap: 4,
+    gap: 2,
+    height: 14,
   },
-  liveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: '50%',
+  wave: {
+    width: 2,
+    height: 10,
     background: '#ef4444',
-    animation: 'pulse 1.2s ease-in-out infinite',
-  },
-  liveText: {
-    fontFamily: 'Share Tech Mono',
-    fontSize: '9px',
-    color: '#ef4444',
-    letterSpacing: '0.1em',
+    borderRadius: 1,
+    animation: 'dotPulse 0.6s ease-in-out infinite alternate',
   },
   votes: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 3,
-    color: '#334155',
-    fontSize: '9px',
     fontFamily: 'Share Tech Mono',
+    fontSize: '8px',
+    color: '#334155',
+    letterSpacing: '0.05em',
   },
-  centerState: {
+  center: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 16,
+    gap: 12,
     padding: '60px 20px',
-    color: '#334155',
   },
   scanLine: {
-    width: 200,
+    width: 120,
     height: 2,
     background: 'linear-gradient(90deg, transparent, #ef4444, transparent)',
-    animation: 'scan 1.5s ease-in-out infinite',
+    animation: 'scan 2s ease-in-out infinite',
   },
   loadingText: {
     fontFamily: 'Share Tech Mono',
@@ -260,26 +247,25 @@ const styles = {
     color: '#334155',
     letterSpacing: '0.15em',
   },
-  loadingDots: {
+  dots: {
     display: 'flex',
     gap: 6,
   },
   dot: {
-    width: 6,
-    height: 6,
-    borderRadius: '50%',
-    background: '#ef4444',
-    animation: 'dotPulse 1s ease-in-out infinite',
+    fontFamily: 'Share Tech Mono',
+    fontSize: '8px',
+    color: '#ef4444',
+    animation: 'dotBlink 1s ease-in-out infinite',
   },
   errorText: {
     fontFamily: 'Share Tech Mono',
-    fontSize: '12px',
-    color: '#475569',
-    letterSpacing: '0.1em',
+    fontSize: '13px',
+    color: '#ef4444',
+    letterSpacing: '0.15em',
   },
-  emptyText: {
+  errorSub: {
     fontFamily: 'Share Tech Mono',
-    fontSize: '12px',
+    fontSize: '10px',
     color: '#334155',
     letterSpacing: '0.1em',
   },

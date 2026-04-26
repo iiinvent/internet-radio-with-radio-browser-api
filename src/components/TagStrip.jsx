@@ -1,98 +1,84 @@
 import React, { useRef } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useBreakpoint } from '../hooks/useBreakpoint'
 
 export default function TagStrip({ tags, activeTag, onSelect, loading }) {
   const scrollRef = useRef(null)
-
-  function scroll(dir) {
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: dir * 200, behavior: 'smooth' })
-    }
-  }
+  const bp = useBreakpoint()
+  const isMobile = bp === 'mobile'
 
   return (
-    <div style={styles.wrapper}>
-      <button style={styles.arrow} onClick={() => scroll(-1)}>
-        <ChevronLeft size={14} color="#64748b" />
-      </button>
-
-      <div ref={scrollRef} style={styles.strip}>
-        {loading ? (
-          <span style={styles.loadingText}>Loading tags...</span>
-        ) : (
-          tags.map(tag => (
+    <div style={styles.wrap}>
+      {loading && (
+        <span style={styles.loadingDot}>●</span>
+      )}
+      <div
+        ref={scrollRef}
+        style={{ ...styles.strip, paddingLeft: isMobile ? 10 : 16 }}
+      >
+        {tags.map(tag => {
+          const isActive = tag === activeTag
+          return (
             <button
               key={tag}
+              onClick={() => onSelect(isActive ? '' : tag)}
               style={{
                 ...styles.tag,
-                ...(activeTag === tag ? styles.tagActive : {}),
+                ...(isActive ? styles.tagActive : {}),
+                fontSize: isMobile ? '8px' : '9px',
+                padding: isMobile ? '3px 8px' : '4px 10px',
               }}
-              onClick={() => onSelect(activeTag === tag ? '' : tag)}
             >
-              {tag}
+              {tag.toUpperCase()}
             </button>
-          ))
-        )}
+          )
+        })}
       </div>
-
-      <button style={styles.arrow} onClick={() => scroll(1)}>
-        <ChevronRight size={14} color="#64748b" />
-      </button>
     </div>
   )
 }
 
 const styles = {
-  wrapper: {
+  wrap: {
+    position: 'relative',
     display: 'flex',
     alignItems: 'center',
-    background: '#0f172a',
+    background: '#020617',
     borderBottom: '1px solid #1e293b',
-    padding: '0 8px',
-    gap: 4,
+    flexShrink: 0,
+    overflow: 'hidden',
+  },
+  loadingDot: {
+    position: 'absolute',
+    left: 6,
+    color: '#ef4444',
+    fontSize: '6px',
+    animation: 'dotBlink 1s infinite',
+    zIndex: 1,
   },
   strip: {
     display: 'flex',
-    gap: 4,
+    gap: 6,
     overflowX: 'auto',
-    padding: '8px 4px',
-    flex: 1,
+    padding: '7px 16px',
     scrollbarWidth: 'none',
     msOverflowStyle: 'none',
+    WebkitOverflowScrolling: 'touch',
   },
   tag: {
-    flexShrink: 0,
     background: 'transparent',
     border: '1px solid #1e293b',
     borderRadius: 2,
-    color: '#475569',
-    fontSize: '10px',
+    color: '#334155',
     fontFamily: 'Share Tech Mono',
-    padding: '4px 10px',
-    letterSpacing: '0.08em',
-    textTransform: 'uppercase',
-    transition: 'all 0.15s',
-    whiteSpace: 'nowrap',
+    letterSpacing: '0.1em',
     cursor: 'pointer',
+    whiteSpace: 'nowrap',
+    flexShrink: 0,
+    transition: 'all 0.15s',
   },
   tagActive: {
     background: '#7f1d1d',
     border: '1px solid #ef4444',
     color: '#fca5a5',
-  },
-  arrow: {
-    background: 'transparent',
-    border: 'none',
-    padding: '4px',
-    display: 'flex',
-    alignItems: 'center',
-    cursor: 'pointer',
-    flexShrink: 0,
-  },
-  loadingText: {
-    fontFamily: 'Share Tech Mono',
-    fontSize: '10px',
-    color: '#334155',
-    padding: '4px 8px',
   },
 }

@@ -13,22 +13,17 @@ export function useFiltersData(filters) {
   const [availableTags, setAvailableTags] = useState(COMMON_GENRES)
   const [loadingMeta, setLoadingMeta] = useState(false)
 
-  // Load countries and languages once
   useEffect(() => {
     async function loadMeta() {
       try {
         const [c, l] = await Promise.all([getCountries(), getLanguages()])
 
-        // Log raw country fields to inspect structure
-        if (c && c[0]) console.log('[Country fields]', Object.keys(c[0]), c[0])
-
-        // Normalize countries — API returns `iso_3166_1` not `iso_3166_1_alpha_2`
         const normalized = c
           .filter(x => x.name && x.stationcount > 0)
           .map(x => ({
             name: x.name,
-            // Try all possible field names the API might use
-            iso_3166_1_alpha_2: x.iso_3166_1 || x.iso_3166_1_alpha_2 || x.countrycode || x.code || '',
+            iso_3166_1_alpha_2:
+              x.iso_3166_1 || x.iso_3166_1_alpha_2 || x.countrycode || x.code || '',
           }))
           .filter(x => x.iso_3166_1_alpha_2)
           .sort((a, b) =>
@@ -44,7 +39,6 @@ export function useFiltersData(filters) {
     loadMeta()
   }, [])
 
-  // Reload tags whenever country or language changes
   useEffect(() => {
     async function loadTags() {
       if (!filters.country && !filters.language) {
